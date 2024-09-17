@@ -26,7 +26,6 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.CRC32;
 
 /**
  *
@@ -179,18 +178,28 @@ public class Packet {
      verifiable by the software.
      */
     void setChecksum(ByteBuffer pkt) {
+        byte b[] = new byte[4];
         pkt.putInt(SUMOFFSET, 0);
-        CRC32 crc = new CRC32();
+        Crc32c crc = new Crc32c();
         crc.update(pkt.array(), pkt.arrayOffset(), ((Buffer)pkt).limit());
-        pkt.putInt(8, (int) crc.getValue());
+        long result = crc.getValue();
+        b[0] = (byte) (result & 0xff);
+        b[1] = (byte) ((result >> 8) & 0xff);
+        b[2] = (byte) ((result >> 16) & 0xff);
+        b[3] = (byte) ((result >> 24) & 0xff);
+        long flip = (((0xff & b[0]) << 24)
+                + ((0xff & b[1]) << 16)
+                + ((0xff & b[2]) << 8)
+                + (0xff & b[3]));
+        pkt.putInt(8, (int) flip);
     }
 
     void checkChecksum(ByteBuffer pkt) throws ChecksumException {
-        int farsum = pkt.getInt(SUMOFFSET);
+        long farsum = (long) pkt.getInt(SUMOFFSET);
         setChecksum(pkt);
-        int calc = pkt.getInt(SUMOFFSET);
+        long calc = (long) pkt.getInt(SUMOFFSET);
         if (calc != farsum) {
-            Log.error("Checksums don't match " + Integer.toHexString(calc) + " vs " + Integer.toHexString(farsum));
+            Log.error("Checksums don't match " + Long.toHexString(calc) + " vs " + Long.toHexString(farsum));
             byte []p = pkt.array();
             Log.error("for packet "+getHex(p));
             throw new ChecksumException();
