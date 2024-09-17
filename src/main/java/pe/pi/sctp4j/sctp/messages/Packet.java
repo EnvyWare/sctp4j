@@ -16,7 +16,6 @@
  */
 package pe.pi.sctp4j.sctp.messages;
 
-import io.netty.handler.codec.compression.*;
 import pe.pi.sctp4j.sctp.Association;
 import pe.pi.sctp4j.sctp.messages.exceptions.ChecksumException;
 import pe.pi.sctp4j.sctp.messages.exceptions.InvalidSCTPPacketException;
